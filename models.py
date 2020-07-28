@@ -47,8 +47,8 @@ class Scraper:
         try:
             await self._loop.run_in_executor(
                 None, self._cursor.execute, self._INSERT, (q, item, type_))
-        except concurrent.futures.CancelledError:
-            raise
+        except asyncio.CancelledError:
+            pass
         except Exception as e:
             logging.exception(f'Some exceptions _insert_one.', exc_info=True)
 
@@ -61,8 +61,8 @@ class Scraper:
             # ¯\_(ツ)_/¯ but we can
             await self._loop.run_in_executor(
                 None, self._cursor.executemany, self._INSERT, data)
-        except concurrent.futures.CancelledError:
-            raise
+        except asyncio.CancelledError:
+            pass
         except Exception as e:
             logging.exception(f'Some exceptions _insert_many.', exc_info=True)
 
@@ -97,7 +97,7 @@ class Scraper:
             return None
 
     async def fetch_data_and_save(self, query: str):
-        data = None
+        data = []
         try:
             data = await self.fetch_suggestions(query)
         except Exception as e:

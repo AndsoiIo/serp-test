@@ -147,3 +147,6 @@ dmypy.json
 
 # sqlite3 files
 *.db
+
+# for playground
+*playground*

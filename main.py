@@ -1,16 +1,17 @@
+import sys
 import asyncio
 import logging
 
 from itertools import islice
 from typing import List, Iterator
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, CancelledError
 
 from db import setup_db
 from utils import prepare_queries, continue_from_last
 from models import Scraper
 from settings import settings_setup
 
-ALPHA = 'абв' #  гдеёжзийклмнопрстуфхцчшщъыьэюя'
+ALPHA = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 
 
 settings = settings_setup()
@@ -28,6 +29,7 @@ async def run_clients_pool(queries: Iterator, clients: List[Scraper]):
     while q:
         # take a few queries from queries iterator
         q = list(islice(queries, 0, n))
+        print(f"Parse queries: {', '.join(q)}...")
         if not len(q):
             break
         # create task and send query from slice
@@ -69,15 +71,14 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     PoolExecutor = ThreadPoolExecutor(max_workers=1)
     loop.set_default_executor(PoolExecutor)
-    loop.create_task(main())
     try:
-        loop.run_forever()
-    except KeyboardInterrupt:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, asyncio.CancelledError):
         print('Cancelled.')
     finally:
         # gracefully shutdown all awaited tasks
         tasks = asyncio.Task.all_tasks()
         [t.cancel() for t in tasks]
-        loop.run_until_complete(asyncio.gather(*tasks))
+        # loop.run_until_complete(asyncio.gather(*tasks))
         PoolExecutor.shutdown(wait=True)
         loop.close()
