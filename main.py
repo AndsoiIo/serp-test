@@ -14,7 +14,7 @@ ALPHA = 'абв' #  гдеёжзийклмнопрстуфхцчшщъыьэюя
 
 
 settings = settings_setup()
-if True:
+if settings.DEBUG:
     logging.getLogger('asyncio').setLevel(logging.WARNING)
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(levelname)-8s %(message)s')
 
@@ -23,7 +23,6 @@ db = setup_db(settings.DB)
 
 async def run_clients_pool(queries: Iterator, clients: List[Scraper]):
     n = len(clients)
-    gather = []
     tasks = []
     q = True
     while q:
@@ -38,14 +37,12 @@ async def run_clients_pool(queries: Iterator, clients: List[Scraper]):
         new_tasks = [clients[i].fetch_data_and_save(q[i]) for i in range(len(q))]
         tasks.extend(new_tasks)
         logging.debug("%s tasks added to gather", len(new_tasks))
-        gather = await asyncio.gather(*tasks, return_exceptions=True)
+        await asyncio.gather(*tasks, return_exceptions=True)
     # replace gather while loop to full cocurrency power :D if you are not afraid to get banned
     # gather = await asyncio.gather(*tasks, return_exceptions=True)
-    return gather
 
 
 async def main():
-    gather = []
     clients = []
     queries = prepare_queries(ALPHA)
 
@@ -60,10 +57,7 @@ async def main():
         clients.append(client)
 
     try:
-        gather = await run_clients_pool(queries, clients)
-    except asyncio.CancelledError:
-
-        asyncio.get_event_loop().run_until_complete(gather)
+        await run_clients_pool(queries, clients)
     except Exception as e:
         logging.exception('Main unhandled exception!')
     finally:
@@ -82,7 +76,8 @@ if __name__ == '__main__':
         print('Cancelled.')
     finally:
         # gracefully shutdown all awaited tasks
-        tasks = [t.cancel() for t in asyncio.Task.all_tasks()]
-        loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+        tasks = asyncio.Task.all_tasks()
+        [t.cancel() for t in tasks]
+        loop.run_until_complete(asyncio.gather(*tasks))
         PoolExecutor.shutdown(wait=True)
         loop.close()
