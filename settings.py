@@ -17,7 +17,7 @@ def settings_setup():
         'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0',
     ]
     PROXIES = []
-    DB = {}
+    DB = {'name': 'sqlite.db', 'table': 'parser'}  # default
 
     Settings = namedtuple('Settings', 'DB PROXIES OVERWRITE DEBUG USER_AGENTS')
 
@@ -26,7 +26,7 @@ def settings_setup():
     cli_parser.add_argument('-p', '--proxies', nargs='+', type=str, help='Use proxies ("host:port").', default=[])
     cli_parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite database with new data.')
     cli_parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
-    cli_parser.add_argument('-db', '--database', type=str, help='SQLite database file.', default='parser.db')
+    cli_parser.add_argument('-db', '--database', type=str, help='SQLite database file.', default=None)
 
     cli_args = vars(cli_parser.parse_args())
     config_file = PROJ_ROOT/cli_args['config']
@@ -39,11 +39,11 @@ def settings_setup():
             PROXIES = [f'{host}:{port}' for host, port in config_parser.items('proxies')]
 
         if 'database' in config_parser.sections():
-            DB = dict(config_parser.items('database'))
+            DB.update(dict(config_parser.items('database')))
     else:
         sys.stdout.write(f'Config file {config_file} does not exist, take default args.\n')
-    
-    DB['name'] = cli_args['database']
+
+    DB['name'] = cli_args['database'] or DB['name']
     
     settings = Settings(
         DB=DB,

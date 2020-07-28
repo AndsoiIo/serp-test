@@ -144,3 +144,6 @@ dmypy.json
 .history
 
 # End of https://www.gitignore.io/api/python
+
+# sqlite3 files
+*.db

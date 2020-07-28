@@ -2,6 +2,7 @@ import random
 import asyncio
 import logging
 import urllib.parse
+import concurrent.futures
 
 from sqlite3 import Cursor
 from typing import Dict, Any, List, Optional
@@ -36,7 +37,6 @@ class Scraper:
         self._INSERT = f'INSERT into {self._table}(query, suggestion, type) values (?, ?, ?)'
         self._client: ClientSession = ClientSession(
             trace_configs=[setup_client_logger()],
-            connector=TCPConnector(verify_ssl=False)  # to allow use proxy
         )
         self._loop: asyncio.BaseEventLoop = self._client.loop
 
@@ -45,9 +45,10 @@ class Scraper:
 
     async def _insert_one(self, q:str, item: Optional[List[str]], type_: Optional[str]):
         try:
-            # self._cursor.execute(self._INSERT, (q, item, type_))
             await self._loop.run_in_executor(
                 None, self._cursor.execute, self._INSERT, (q, item, type_))
+        except concurrent.futures.CancelledError:
+            raise
         except Exception as e:
             logging.exception(f'Some exceptions _insert_one.', exc_info=True)
 
@@ -60,7 +61,8 @@ class Scraper:
             # ¯\_(ツ)_/¯ but we can
             await self._loop.run_in_executor(
                 None, self._cursor.executemany, self._INSERT, data)
-            # self._cursor.executemany(self._INSERT, data)
+        except concurrent.futures.CancelledError:
+            raise
         except Exception as e:
             logging.exception(f'Some exceptions _insert_many.', exc_info=True)
 

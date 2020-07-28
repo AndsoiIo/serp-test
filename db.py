@@ -1,13 +1,13 @@
 from sqlite3 import connect
 
 
-def setup_db(db_name: str):
+def setup_db(dbconfig: dict):
     # connect to db with autocommit mode
-    db = connect(db_name, isolation_level=None, check_same_thread=False)  # check_same_thread=False for thread mode :)
+    db = connect(dbconfig['name'], isolation_level=None, check_same_thread=False)
     cursor = db.cursor()
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS allo (
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS {dbconfig['table']} (
             query TEXT,
             suggestion TEXT,
             type TEXT

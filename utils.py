@@ -29,8 +29,8 @@ def continue_from_last(db: Connection, table: str, queries: Iterator) -> Iterato
     if not last:
         return queries
 
-    lst = list(queries)
+    queries_list = list(queries)
     last = ''.join(last)
-    index = lst.index(last)
-    logging.debug('Last query string is "%s", on %d index out of %d', last, index, len(lst))
-    return islice(lst, index, sys.maxsize)
+    index = queries_list.index(last) + 1
+    logging.debug('Last query string is "%s", on %d index out of %d', last, index, len(queries_list))
+    return islice(queries_list, index, sys.maxsize)
